@@ -474,7 +474,8 @@ def test_refit_one_engine_python_runtime_with_weightmap():
     "Refit feature is not supported in Python 3.13 or higher",
 )
 @pytest.mark.unit
-def test_refit_multiple_engine_with_weightmap():
+@pytest.mark.parametrize("use_fast_partitioner", [True, False])
+def test_refit_multiple_engine_with_weightmap(use_fast_partitioner):
     class net(nn.Module):
         def __init__(self):
             super().__init__()
@@ -509,6 +510,7 @@ def test_refit_multiple_engine_with_weightmap():
         min_block_size=min_block_size,
         immutable_weights=False,
         torch_executed_ops=torch_executed_ops,
+        use_fast_partitioner=use_fast_partitioner,
         reuse_cached_engines=False,
     )
 
@@ -608,7 +610,8 @@ def test_refit_preserves_torch_executed_modules_partitioning(use_fast_partitione
 
 
 @pytest.mark.unit
-def test_refit_multiple_engine_with_weightmap_cpu_offload():
+@pytest.mark.parametrize("use_fast_partitioner", [True, False])
+def test_refit_multiple_engine_with_weightmap_cpu_offload(use_fast_partitioner):
     class net(nn.Module):
         def __init__(self):
             super().__init__()
@@ -643,6 +646,7 @@ def test_refit_multiple_engine_with_weightmap_cpu_offload():
         min_block_size=min_block_size,
         immutable_weights=False,
         torch_executed_ops=torch_executed_ops,
+        use_fast_partitioner=use_fast_partitioner,
         reuse_cached_engines=False,
         offload_module_to_cpu=True,
     )
@@ -867,7 +871,8 @@ def test_refit_one_engine_python_runtime_without_weightmap():
     "Refit feature is not supported in Python 3.13 or higher",
 )
 @pytest.mark.unit
-def test_refit_multiple_engine_without_weightmap():
+@pytest.mark.parametrize("use_fast_partitioner", [True, False])
+def test_refit_multiple_engine_without_weightmap(use_fast_partitioner):
     class net(nn.Module):
         def __init__(self):
             super().__init__()
@@ -902,6 +907,7 @@ def test_refit_multiple_engine_without_weightmap():
         min_block_size=min_block_size,
         immutable_weights=False,
         torch_executed_ops=torch_executed_ops,
+        use_fast_partitioner=use_fast_partitioner,
         reuse_cached_engines=False,
     )
 
