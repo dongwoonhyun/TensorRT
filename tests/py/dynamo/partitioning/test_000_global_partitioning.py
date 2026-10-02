@@ -197,6 +197,32 @@ class TestGlobalPartitioning(TestCase):
                 **exclusion_kwargs,
             )
 
+    def test_offload_module_to_cpu_with_torch_fallback(self):
+        mod = (
+            torch.nn.Sequential(
+                torch.nn.Conv2d(3, 8, 3, padding=1),
+                torch.nn.ReLU(),
+                torch.nn.Conv2d(8, 8, 3, padding=1),
+            )
+            .eval()
+            .to("cuda")
+        )
+        inputs = torch.rand((1, 3, 16, 16)).to("cuda")
+        with torch.no_grad():
+            expected = mod(inputs)
+        trt_mod = torch_tensorrt.compile(
+            mod,
+            ir="dynamo",
+            inputs=[inputs],
+            min_block_size=1,
+            torch_executed_ops={"torch.ops.aten.convolution.default"},
+            use_fast_partitioner=False,
+            offload_module_to_cpu=True,
+        )
+        with torch.no_grad():
+            actual = trt_mod(inputs)
+        torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
+
     def test_convert_to_trt_engine_rejects_torch_executed_modules(self):
         mod = (
             torch.nn.Sequential(torch.nn.Conv2d(3, 8, 3, padding=1), torch.nn.ReLU())
