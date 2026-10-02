@@ -1649,6 +1649,20 @@ def compile_module(
             trt_module = getattr(partitioned_module, name)
             trt_module.setup_engine()
 
+    # Undo the CPU offload for any tensors used by top-level torch ops (global partitioner)
+    if settings.offload_module_to_cpu and not settings.use_fast_partitioner:
+        device = to_torch_device(settings.device)
+        for node in partitioned_module.graph.nodes:
+            if node.op != "get_attr":
+                continue
+            owner_name, _, attr_name = node.target.rpartition(".")
+            owner = partitioned_module.get_submodule(owner_name)
+            tensor = getattr(owner, attr_name)
+            if isinstance(tensor, torch.nn.Parameter):
+                tensor.data = tensor.data.to(device)
+            elif isinstance(tensor, torch.Tensor):
+                setattr(owner, attr_name, tensor.to(device))
+
     # Post-partition complex I/O boundary pass — runs in both normal and dryrun mode
     # so the wrapper graph reflects the exact graph that will be executed/built.
     _insert_complex_io_adapters(partitioned_module, gm, settings)
